@@ -18,3 +18,25 @@ Clavis is a simple binary for auto-provisioning the initial user for Rstudio-Con
 ```
 ./clavis -email email@domain.com -name "John Doe" -o ThisCo
 ```
+
+
+## Motd
+This basically creates a .motd file in the home directory and updates bashrc to cat that file. This is because the built-in MOTD only ever actually gets applied on login, so shells initiated from RStudio or the Desktop terminal emulators will never present them. 
+
+```
+
+  __  __          _
+ |  \/  |   ___  | |_  __      __   ___    _ __  __  __
+ | |\/| |  / _ \ | __| \ \ /\ / /  / _ \  | '__| \ \/ /
+ | |  | | |  __/ | |_   \ V  V /  | (_) | | |     >  <
+ |_|  |_|  \___|  \__|   \_/\_/    \___/  |_|    /_/\_\
+
+
+
+Welcome to Metworx. RSConnect has been provisioned on this system and your user, darrellb, has been provisioned as an administrator successfully!
+Your RSConnect password has been written to /data/home/darrellb/.rsconnectpassword , but you should change it as quickly as soon as you login.
+
+Enjoy Metworx, and enjoy RSConnect!
+```
+
+The organization name is used along with figlet to create the ascii representation of the organization name.
