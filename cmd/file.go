@@ -120,7 +120,7 @@ func updateShellConfiguration() error {
 
 	defer f.Close()
 
-	f.WriteString("cat " + config)
+	f.WriteString("cat " + logos.HomeDir + "/.motd")
 
 	return nil
 }
