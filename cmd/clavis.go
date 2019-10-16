@@ -77,7 +77,7 @@ var Clavis = &cobra.Command{
 func init() {
 	//Optionally specify a username besides the shell account name
 	Clavis.PersistentFlags().StringP("username", "u", "", "The username to be utilized for both account creation and detail storage")
-	Clavis.PersistentFlags().StringP("file", "f", ".rsconnectpassword", "The filename to use for writing key details")
+	Clavis.PersistentFlags().StringP("file", "f", ".rsconnectpassword", "The filename to use for writing the contents of the rsconnect password")
 	//Optionally specify a location besides the current user home directory
 	Clavis.PersistentFlags().StringP("location", "l", "", "The absolute path to a directory in which to store the key details")
 	Clavis.PersistentFlags().StringP("email", "e", "user@domain.com", "The email to be used when generating the user")
@@ -195,8 +195,8 @@ func (u RSConnectUser) Create() (RSConnectUser, error) {
 	return u, nil
 }
 
-//Produces figlet output
-func getFiglyWithIt(input string) (string, error) {
+//GetFiglyWithIt Produces figlet output
+func GetFiglyWithIt(input string) (string, error) {
 	ascii := figlet4go.NewAsciiRender()
 
 	// Adding the colors to RenderOptions

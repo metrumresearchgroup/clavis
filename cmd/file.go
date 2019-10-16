@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"bytes"
-	"html/template"
 	"os"
 	"os/user"
+	"text/template"
 
 	"github.com/spf13/viper"
 )
@@ -19,7 +19,7 @@ type TemplateSpec struct {
 
 const outputTemplate string = `
 {{ if .OrganizationFiglet }}
-	{{ .OrganizationFiglet }}
+{{- .OrganizationFiglet -}}
 {{ end }}
 
 Welcome to {{ .Organization }}. RSConnect has been provisioned on this system and your user, {{ .Username }}, has been provisioned as an administrator successfully! 
@@ -38,7 +38,7 @@ func (u RSConnectUser) TemplateSpec() (TemplateSpec, error) {
 		PasswordFile: viper.GetString("location") + "/" + viper.GetString("file"),
 	}
 
-	fig, err := getFiglyWithIt(tspec.Organization)
+	fig, err := GetFiglyWithIt(tspec.Organization)
 
 	if err != nil {
 		return TemplateSpec{}, err
