@@ -1,3 +1,5 @@
+[![Coverage Status](https://coveralls.io/repos/github/metrumresearchgroup/clavis/badge.svg?branch=master)](https://coveralls.io/github/metrumresearchgroup/clavis?branch=master)
+
 # Clavis - The Key
 
 Clavis is a simple binary for auto-provisioning the initial user for Rstudio-Connect. It hinges on the fact that, with password backed authentication, the initial request for creating a user is allowed without an API token. See the below snippet from the Rstudio-Connect Server API Reference:
