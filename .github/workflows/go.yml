@@ -32,7 +32,7 @@ jobs:
         go mod download
         go get github.com/mattn/goveralls
         mkdir -p $GOROOT/src/github.com/metrumresearchgroup
-        cp -vrf /home/runner/work/clavis/clavis $GOROOT/src/github.com/metrumresearchgroup
+        cp -rf /home/runner/work/clavis/clavis $GOROOT/src/github.com/metrumresearchgroup
         cd $GOROOT/src/github.com/metrumresearchgroup/clavis
         go test -v cmd/* -covermode=count -coverprofile=coverage.out
         cp /home/runner/go/bin/goveralls $GOROOT/bin
