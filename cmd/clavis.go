@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os/user"
@@ -17,7 +18,7 @@ import (
 //GeneratedPassword is the GUID generated for the purpose of one-time authentication
 var GeneratedPassword string
 
-const userAPIURL string = "http://localhost:3939/__api__/v1/users"
+var userAPIURL string = "http://localhost:3939/__api__/v1/users"
 
 //RSConnectUser is the structure defining an RSConnect User
 type RSConnectUser struct {
@@ -53,14 +54,7 @@ var Clavis = &cobra.Command{
 			return
 		}
 
-		//Handle empty /default settings
-		if viper.GetString("username") == "" {
-			viper.Set("username", logos.Username)
-		}
-
-		if viper.GetString("location") == "" {
-			viper.Set("location", logos.HomeDir)
-		}
+		handleDefaults(logos)
 
 		u := newRSConnectUser()
 		u, err = u.Create()
@@ -72,6 +66,17 @@ var Clavis = &cobra.Command{
 
 		cmd.Println("Successfully provisioned user")
 	},
+}
+
+func handleDefaults(u *user.User) {
+	//Handle empty /default settings
+	if viper.GetString("username") == "" {
+		viper.Set("username", u.Username)
+	}
+
+	if viper.GetString("location") == "" {
+		viper.Set("location", u.HomeDir)
+	}
 }
 
 func init() {
@@ -163,6 +168,10 @@ func (u RSConnectUser) Create() (RSConnectUser, error) {
 		return u, err
 	}
 
+	if resp.StatusCode > 500 || resp.StatusCode == http.StatusUnauthorized {
+		return u, fmt.Errorf("We received an unexpected (%v) http response from the server", resp.StatusCode)
+	}
+
 	//Just to make sure we close the thing.
 	defer resp.Body.Close()
 
@@ -192,7 +201,7 @@ func (u RSConnectUser) Create() (RSConnectUser, error) {
 		return u, err
 	}
 
-	return u, nil
+	return respUser, nil
 }
 
 //GetFiglyWithIt Produces figlet output
