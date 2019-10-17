@@ -27,7 +27,7 @@ jobs:
         COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
       run: |
         go mod download
-        go get go get github.com/mattn/goveralls
+        go get github.com/mattn/goveralls
         mkdir -p $GOROOT/src/github.com/metrumresearchgroup
         cp -vrf /home/runner/work/clavis/clavis $GOROOT/src/github.com/metrumresearchgroup
         cd $GOROOT/src/github.com/metrumresearchgroup/clavis
