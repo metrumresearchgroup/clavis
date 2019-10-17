@@ -28,12 +28,12 @@ jobs:
       run: |
         mkdir -p $GITHUB_WORKSPACE/gopath
         export GOPATH=$GITHUB_WORKSPACE/gopath
+        mkdir -p $GOROOT/src/github.com/metrumresearchgroup
+        cp -rf /home/runner/work/clavis/clavis $GOPATH/src/github.com/metrumresearchgroup
+        cd $GOPATH/src/github.com/metrumresearchgroup/clavis
         go mod tidy
         go mod download
         go get github.com/mattn/goveralls
-        mkdir -p $GOROOT/src/github.com/metrumresearchgroup
-        cp -rf /home/runner/work/clavis/clavis $GOROOT/src/github.com/metrumresearchgroup
-        cd $GOROOT/src/github.com/metrumresearchgroup/clavis
         go test -v cmd/* -covermode=count -coverprofile=coverage.out
         cp /home/runner/go/bin/goveralls $GOROOT/bin
         git checkout master
