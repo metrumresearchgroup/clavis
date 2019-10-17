@@ -1,8 +1,19 @@
 # Clavis - The Key
 
-Clavis is a simple binary for auto-provisioning the initial user for Rstudio-Connect. While there is a large array of paramters that can be provided, only three are required to operate:
+Clavis is a simple binary for auto-provisioning the initial user for Rstudio-Connect. It hinges on the fact that, with password backed authentication, the initial request for creating a user is allowed without an API token. See the below snippet from the Rstudio-Connect Server API Reference:
+
+>This endpoint requires authentication to create other users, which means that you need an API Key for access. How do you get an API Key if there are no users in RStudio Connect?
+> * For password authentication, you can use this endpoint without an API Key to create the first user. The first user will be an administrator.
+
 
 ## Parameters
+
+While there is a large array of paramters that can be provided, only three are required to operate:
+ * email
+ * name
+ * organization
+
+ ### Parameter List
 
 * `email` : The email address used for creating the account
 * `name` : The full name of the user used in creating the account
@@ -38,5 +49,3 @@ Your RSConnect password has been written to /data/home/darrellb/.rsconnectpasswo
 
 Enjoy Metworx, and enjoy RSConnect!
 ```
-
-The organization name is used along with figlet to create the ascii representation of the organization name.
