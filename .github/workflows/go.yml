@@ -25,7 +25,9 @@ jobs:
     - name: Coverall
       env:
         COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+        GOPATH: /go/path
       run: |
+        mkdir -p /go/path
         go mod tidy
         go mod download
         go get github.com/mattn/goveralls
