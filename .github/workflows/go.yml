@@ -31,6 +31,7 @@ jobs:
         mkdir -p $GOPATH/src/github.com/metrumresearchgroup
         cp -rf /home/runner/work/clavis/clavis $GOPATH/src/github.com/metrumresearchgroup
         cd $GOPATH/src/github.com/metrumresearchgroup/clavis
+        go install . 
         go mod tidy
         go mod download
         go get github.com/mattn/goveralls
