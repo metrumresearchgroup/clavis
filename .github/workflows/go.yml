@@ -36,8 +36,8 @@ jobs:
         go mod download
         go get github.com/mattn/goveralls
         go test -v cmd/* -covermode=count -coverprofile=coverage.out
-        cat coverage.out
         cp /home/runner/go/bin/goveralls $GOROOT/bin
+        sed -i 's/\/home\/runner\/go\/src\///g' coverage.out
         git checkout master
         $GOROOT/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
 
