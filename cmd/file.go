@@ -80,7 +80,7 @@ func (t TemplateSpec) Write() error {
 		return err
 	}
 	defer password.Close()
-	password.WriteString(GeneratedPassword)
+	password.WriteString(GeneratedPassword + "\n")
 	password.Chmod(0700)
 
 	//Write the MOTD out
@@ -99,7 +99,7 @@ func (t TemplateSpec) Write() error {
 	defer motd.Close()
 
 	motd.Chmod(0700)
-	motd.WriteString(content)
+	motd.WriteString(content + "\n")
 
 	//Updating Shell
 	err = updateShellConfiguration()
