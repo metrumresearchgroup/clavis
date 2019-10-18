@@ -25,6 +25,13 @@ const outputTemplate string = `
 Welcome to {{ .Organization }}. RSConnect has been provisioned on this system and your user, {{ .Username }}, has been provisioned as an administrator successfully! 
 Your RSConnect password has been written to {{ .PasswordFile }} , but you should change it as quickly as soon as you login. 
 
+If you'd like to stop seeing this message, just issue the following command:
+
+clavis hush
+
+This will remove the MOTD file displaying this message as well as update your bash configuration to not attempt to display it.
+
+
 Enjoy {{ .Organization }}, and enjoy RSConnect!
 `
 

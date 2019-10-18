@@ -41,12 +41,23 @@ type RSConnectUser struct {
 
 // Clavis is the root level command
 var Clavis = &cobra.Command{
-	Use:   "Provisioning and user preparation tool",
-	Short: "Preparing and securing",
+	Use:   "clavis",
+	Short: "Preparing and securing RSConnect",
 	Long:  `This application serves to provision an initial RSConnect (Password backed) user. A password is generated and a templated file is inserted into the user's directory with those details for login purposes.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
+
+		//Check for config
+		existingConfig, err := readConfig()
+
+		if err == nil && existingConfig.Completed {
+			//Looks like there was actually a completed config file here.
+			cmd.Println("A config already exists for this user. No work to be done")
+			return
+		}
+
+		//No config, proceding
 		logos, err := user.Current()
 
 		if err != nil {
@@ -58,6 +69,21 @@ var Clavis = &cobra.Command{
 
 		u := newRSConnectUser()
 		u, err = u.Create()
+
+		if err != nil {
+			cmd.PrintErr(err)
+			return
+		}
+
+		//Config Storage
+		newConfig := Configuration{
+			Completed:              true,
+			PasswordFile:           viper.GetString("location") + "/" + viper.GetString("file"),
+			ShellConfigurationFile: viper.GetString("shellconfig"),
+			Location:               viper.GetString("location"),
+		}
+
+		err = newConfig.Store()
 
 		if err != nil {
 			cmd.PrintErr(err)
