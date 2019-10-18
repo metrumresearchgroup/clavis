@@ -1,4 +1,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/metrumresearchgroup/clavis/badge.svg?branch=master)](https://coveralls.io/github/metrumresearchgroup/clavis?branch=master)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=metrumresearchgroup_clavis&metric=alert_status)](https://sonarcloud.io/dashboard?id=metrumresearchgroup_clavis)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=metrumresearchgroup_clavis&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=metrumresearchgroup_clavis)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=metrumresearchgroup_clavis&metric=code_smells)](https://sonarcloud.io/dashboard?id=metrumresearchgroup_clavis)
 
 # Clavis - The Key
 
