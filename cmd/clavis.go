@@ -41,8 +41,8 @@ type RSConnectUser struct {
 
 // Clavis is the root level command
 var Clavis = &cobra.Command{
-	Use:   "Provisioning and user preparation tool",
-	Short: "Preparing and securing",
+	Use:   "clavis",
+	Short: "Preparing and securing RSConnect",
 	Long:  `This application serves to provision an initial RSConnect (Password backed) user. A password is generated and a templated file is inserted into the user's directory with those details for login purposes.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
