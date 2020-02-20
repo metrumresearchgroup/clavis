@@ -335,6 +335,10 @@ func TestCommandExecution(t *testing.T) {
 	viper.Set("location", "/tmp")
 	viper.Set("file", "testfile")
 
+	viper.Set("organization", "thisco")
+	viper.Set("name", "this guy")
+	viper.Set("email", "this@guy.com")
+
 	u := RSConnectUser{
 		Email:          "john@doe.com",
 		FirstName:      "John",

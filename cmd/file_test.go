@@ -14,6 +14,7 @@ func TestRSConnectUser_TemplateSpec(t *testing.T) {
 	viper.Set("username", "joed")
 	viper.Set("location", "/home/joed")
 	viper.Set("file", ".rsconnectpassword")
+	viper.Set("organization","ThisCo")
 
 	var vc ViperConfig
 	viper.Unmarshal(&vc)
