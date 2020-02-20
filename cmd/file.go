@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -90,25 +91,27 @@ func (t TemplateSpec) Write(config ViperConfig) error {
 		return err
 	}
 
+	if config.CreateMOTD {
+		log.Debug("Based on configuration, creating MOTD file")
+		motd, err := os.Create(filepath.Join(config.Location,".motd"))
 
-	motd, err := os.Create(filepath.Join(config.Location,".motd"))
+		if err != nil {
+			return err
+		}
 
-	if err != nil {
-		return err
+		defer motd.Close()
+
+		motd.Chmod(0700)
+		motd.WriteString(content + "\n")
+
+		//Updating Shell
+		log.Debug("Updating shell / shell config")
+		err = updateShellConfiguration(config)
+
+		if err != nil {
+			return err
+		}
 	}
-
-	defer motd.Close()
-
-	motd.Chmod(0700)
-	motd.WriteString(content + "\n")
-
-	//Updating Shell
-	err = updateShellConfiguration(config)
-
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
