@@ -7,8 +7,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os/user"
+	"path/filepath"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	uuid "github.com/google/uuid"
 	"github.com/mbndr/figlet4go"
 	"github.com/spf13/cobra"
@@ -39,6 +41,21 @@ type RSConnectUser struct {
 	UserRole    string `json:"user_role,omitempty"`
 }
 
+var (
+	ViperConfiguration ViperConfig
+)
+
+type ViperConfig struct {
+	Username string `mapstructure:"username" json:"username" yaml:"username"`
+	File string `mapstructure:"file" json:"file" yaml:"file"`
+	Location string `mapstructure:"location" json:"location" yaml:"location"`
+	Email string `mapstructure:"email" json:"email" yaml:"email"`
+	Name string `mapstructure:"name" json:"name" yaml:"name"`
+	Organization string `mapstructure:"organization" json:"organization" yaml:"organization"`
+	ShellConfig string `mapstructure:"shell_config" json:"shell_config" yaml:"shell_config"`
+	Debug bool `mapstructure:"debug" json:"debug" yaml:"debug"`
+}
+
 // Clavis is the root level command
 var Clavis = &cobra.Command{
 	Use:   "clavis",
@@ -48,41 +65,47 @@ var Clavis = &cobra.Command{
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 
+
+		err := viper.Unmarshal(&ViperConfiguration)
+
+		if ViperConfiguration.Debug{
+			log.SetLevel(log.DebugLevel)
+		}
+
+		log.Debug("Successfully marshalled viper down")
+
+		if err != nil {
+			log.Fatalf("Failure unmarshalling viper contents")
+		}
+
 		//Check for config
+		log.Debug("Looking for an existing configuration")
 		existingConfig, err := readConfig()
 
 		if err == nil && existingConfig.Completed {
 			//Looks like there was actually a completed config file here.
-			cmd.Println("A config already exists for this user. No work to be done")
+			log.Info("A config already exists for this user. No work to be done")
 			return
 		}
 
-		//No config, proceding
-		logos, err := user.Current()
+		log.Debug("Attempting to create new user struct from Viper details")
+		u := newRSConnectUser(ViperConfiguration)
+		u, err = u.Create(ViperConfiguration)
 
 		if err != nil {
-			cmd.PrintErr("Unable to get current user details: ", err)
-			return
-		}
-
-		handleDefaults(logos)
-
-		u := newRSConnectUser()
-		u, err = u.Create()
-
-		if err != nil {
-			cmd.PrintErr(err)
+			log.Errorf("An error occurred while creating the user in RSConnect: %s", err)
 			return
 		}
 
 		//Config Storage
 		newConfig := Configuration{
 			Completed:              true,
-			PasswordFile:           viper.GetString("location") + "/" + viper.GetString("file"),
-			ShellConfigurationFile: viper.GetString("shellconfig"),
-			Location:               viper.GetString("location"),
+			PasswordFile:           filepath.Join(ViperConfiguration.Location,ViperConfiguration.File),
+			ShellConfigurationFile: ViperConfiguration.ShellConfig,
+			Location:               ViperConfiguration.Location,
 		}
 
+		log.Debug("Writing the details of the clavis config")
 		err = newConfig.Store()
 
 		if err != nil {
@@ -90,22 +113,18 @@ var Clavis = &cobra.Command{
 			return
 		}
 
-		cmd.Println("Successfully provisioned user")
+		log.Info("Successfully provisioned user")
 	},
 }
 
-func handleDefaults(u *user.User) {
-	//Handle empty /default settings
-	if viper.GetString("username") == "" {
-		viper.Set("username", u.Username)
-	}
-
-	if viper.GetString("location") == "" {
-		viper.Set("location", u.HomeDir)
-	}
-}
-
 func init() {
+
+	user, err := user.Current()
+
+	if err != nil {
+		log.Fatalf("Unable to access current user details!. %s",err)
+	}
+
 	//Optionally specify a username besides the shell account name
 	Clavis.PersistentFlags().StringP("username", "u", "", "The username to be utilized for both account creation and detail storage")
 	Clavis.PersistentFlags().StringP("file", "f", ".rsconnectpassword", "The filename to use for writing the contents of the rsconnect password")
@@ -114,7 +133,11 @@ func init() {
 	Clavis.PersistentFlags().StringP("email", "e", "user@domain.com", "The email to be used when generating the user")
 	Clavis.PersistentFlags().StringP("name", "n", "", "The name of the user [First and last separated by space] we are provisioning")
 	Clavis.PersistentFlags().StringP("organization", "o", "ThisCo", "The name of the organization used for setting up the template")
-	Clavis.PersistentFlags().StringP("shellconfig", "c", ".bashrc", "Defines the location of the shall profile / rc for manipulation")
+	Clavis.PersistentFlags().StringP("shell_config", "c", ".bashrc", "Defines the location of the shall profile / rc for manipulation")
+	Clavis.PersistentFlags().BoolP("debug","d", false, "Whether or not to print debug information" )
+
+	viper.SetDefault("user",user.Username)
+	viper.SetDefault("location", user.HomeDir)
 
 	viper.BindPFlag("username", Clavis.PersistentFlags().Lookup("username"))
 	viper.BindPFlag("file", Clavis.PersistentFlags().Lookup("file"))
@@ -122,20 +145,21 @@ func init() {
 	viper.BindPFlag("email", Clavis.PersistentFlags().Lookup("email"))
 	viper.BindPFlag("name", Clavis.PersistentFlags().Lookup("name"))
 	viper.BindPFlag("organization", Clavis.PersistentFlags().Lookup("organization"))
-	viper.BindPFlag("shellconfig", Clavis.PersistentFlags().Lookup("shellconfig"))
+	viper.BindPFlag("shell_config", Clavis.PersistentFlags().Lookup("shell_config"))
+	viper.BindPFlag("debug", Clavis.PersistentFlags().Lookup("debug"))
 }
 
-func newRSConnectUser() RSConnectUser {
+func newRSConnectUser(config ViperConfig) RSConnectUser {
 	GeneratedPassword = uuid.New().String()
 
-	namePieces := strings.Fields(viper.GetString("name"))
+	namePieces := strings.Fields(config.Name)
 
 	ucr := RSConnectUser{
-		Username:       viper.GetString("username"),
-		Email:          viper.GetString("email"),
+		Username:       config.Username,
+		Email:          config.Email,
 		Password:       GeneratedPassword,
-		FirstName:      viper.GetString("username"),
-		LastName:       viper.GetString("username"),
+		FirstName:      config.Username,
+		LastName:       config.Username,
 		SetOwnPassword: false,
 	}
 
@@ -180,7 +204,7 @@ func (u RSConnectUser) Request() (*http.Request, error) {
 }
 
 //Create performs the request to the RS Connect server
-func (u RSConnectUser) Create() (RSConnectUser, error) {
+func (u RSConnectUser) Create(config ViperConfig) (RSConnectUser, error) {
 	req, err := u.Request()
 	if err != nil {
 		return u, err
@@ -215,13 +239,13 @@ func (u RSConnectUser) Create() (RSConnectUser, error) {
 	}
 
 	//Trigger the File creation and update of bashrc
-	ts, err := u.TemplateSpec()
+	ts, err := u.TemplateSpec(config)
 
 	if err != nil {
 		return u, err
 	}
 
-	err = ts.Write()
+	err = ts.Write(config)
 
 	if err != nil {
 		return u, err
