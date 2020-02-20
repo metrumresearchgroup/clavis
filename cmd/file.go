@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"bytes"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"os/user"
+	"path/filepath"
 	"text/template"
-
-	"github.com/spf13/viper"
 )
 
 //TemplateSpec is a struct used for the outputTemplate file template
@@ -36,13 +36,13 @@ Enjoy {{ .Organization }}, and enjoy RSConnect!
 `
 
 //TemplateSpec creates a TemplateSpec from the RSConnect User
-func (u RSConnectUser) TemplateSpec() (TemplateSpec, error) {
+func (u RSConnectUser) TemplateSpec(config ViperConfig) (TemplateSpec, error) {
 
 	//Create the Config object
 	tspec := TemplateSpec{
-		Organization: viper.GetString("organization"),
-		Username:     viper.GetString("username"),
-		PasswordFile: viper.GetString("location") + "/" + viper.GetString("file"),
+		Organization: config.Organization,
+		Username:     config.Username,
+		PasswordFile: filepath.Join(config.Location , config.File),
 	}
 
 	fig, err := GetFiglyWithIt(tspec.Organization)
@@ -71,10 +71,11 @@ func (t TemplateSpec) Render() (string, error) {
 }
 
 //Write will write the rendered content down to the desired File
-func (t TemplateSpec) Write() error {
+func (t TemplateSpec) Write(config ViperConfig) error {
 
 	//Write the Password File out
-	password, err := os.Create(viper.GetString("location") + "/" + viper.GetString("file"))
+
+	password, err := os.Create(filepath.Join(config.Location,config.File))
 
 	if err != nil {
 		return err
@@ -90,34 +91,37 @@ func (t TemplateSpec) Write() error {
 		return err
 	}
 
-	motd, err := os.Create(viper.GetString("location") + "/.motd")
+	if config.CreateMOTD {
+		log.Debug("Based on configuration, creating MOTD file")
+		motd, err := os.Create(filepath.Join(config.Location,".motd"))
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
+
+		defer motd.Close()
+
+		motd.Chmod(0700)
+		motd.WriteString(content + "\n")
+
+		//Updating Shell
+		log.Debug("Updating shell / shell config")
+		err = updateShellConfiguration(config)
+
+		if err != nil {
+			return err
+		}
 	}
-
-	defer motd.Close()
-
-	motd.Chmod(0700)
-	motd.WriteString(content + "\n")
-
-	//Updating Shell
-	err = updateShellConfiguration()
-
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
-func updateShellConfiguration() error {
+func updateShellConfiguration(vconfig ViperConfig) error {
 	logos, err := user.Current()
 	if err != nil {
 		return err
 	}
 
-	config := logos.HomeDir + "/" + viper.GetString("shellconfig")
+	config := filepath.Join(logos.HomeDir,vconfig.ShellConfig)
 
 	f, err := os.OpenFile(config, os.O_APPEND|os.O_WRONLY, 0600)
 

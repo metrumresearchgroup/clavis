@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os/user"
 	"reflect"
 	"testing"
 
@@ -79,8 +78,11 @@ func Test_newRSConnectUser(t *testing.T) {
 		viper.Set("email", s.emails[key])
 		viper.Set("name", s.names[key])
 
+		var vc ViperConfig
+		viper.Unmarshal(&vc)
+
 		t.Run(tt.name, func(t *testing.T) {
-			got := newRSConnectUser()
+			got := newRSConnectUser(vc)
 			got.Password = "123456"
 
 			got.Username = s.usernames[key]
@@ -165,81 +167,6 @@ func TestRSConnectUser_JSON(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("RSConnectUser.JSON() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_handleDefaults(t *testing.T) {
-
-	logos, _ := user.Current()
-
-	type args struct {
-		u *user.User
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		{
-			name: "Name is present",
-			args: args{
-				u: logos,
-			},
-		},
-		{
-			name: "Name is not present",
-			args: args{
-				u: logos,
-			},
-		},
-		{
-			name: "Name is present, location is not",
-			args: args{
-				u: logos,
-			},
-		},
-		{
-			name: "Neither name or directory are present",
-			args: args{
-				u: logos,
-			},
-		},
-	}
-	for k, tt := range tests {
-
-		viper.Set("username", nil)
-		viper.Set("location", nil)
-
-		switch k {
-		case 0:
-			viper.Set("username", "johnd")
-			viper.Set("location", "/home/johnd")
-		case 1:
-			viper.Set("location", "/home/johnd")
-		case 2:
-			viper.Set("username", "johnd")
-		}
-
-		t.Run(tt.name, func(t *testing.T) {
-			handleDefaults(tt.args.u)
-			switch k {
-			case 0:
-				if viper.GetString("username") != "johnd" {
-					t.Errorf("Not a match")
-				}
-			case 1:
-				if viper.GetString("username") != logos.Username {
-					t.Errorf("Should have pulled username from the current user")
-				}
-			case 2:
-				if viper.GetString("username") != "johnd" && viper.GetString("location") != logos.HomeDir {
-					t.Errorf("Failed to default file location to user details")
-				}
-			case 3:
-				if viper.GetString("username") != logos.Username && viper.GetString("location") != logos.HomeDir {
-					t.Errorf("Either the username or file location failed to default to the defined user")
-				}
 			}
 		})
 	}
@@ -332,6 +259,9 @@ func TestRSConnectUser_Create(t *testing.T) {
 	viper.Set("location", "/tmp")
 	viper.Set("file", "testfile")
 
+	var vc ViperConfig
+	viper.Unmarshal(&vc)
+
 	var responsecode int = 401
 
 	u := RSConnectUser{
@@ -361,7 +291,7 @@ func TestRSConnectUser_Create(t *testing.T) {
 	//Remap value so that we can hit the test server.
 	userAPIURL = srv.URL
 
-	newU, err := u.Create()
+	newU, err := u.Create(vc)
 
 	if err != nil {
 		t.Errorf("Failed for some reason %s", err.Error())
@@ -381,7 +311,7 @@ func TestRSConnectUser_Create(t *testing.T) {
 
 	userAPIURL = badsrv.URL
 
-	_, err = u.Create()
+	_, err = u.Create(vc)
 
 	if err == nil {
 		t.Errorf("We should have gotten an error back due to a 401")
@@ -389,7 +319,7 @@ func TestRSConnectUser_Create(t *testing.T) {
 
 	responsecode = 501
 
-	_, err = u.Create()
+	_, err = u.Create(vc)
 
 	if err == nil {
 		t.Errorf("We should have received an error back to a 501")
@@ -404,6 +334,10 @@ func TestCommandExecution(t *testing.T) {
 
 	viper.Set("location", "/tmp")
 	viper.Set("file", "testfile")
+
+	viper.Set("organization", "thisco")
+	viper.Set("name", "this guy")
+	viper.Set("email", "this@guy.com")
 
 	u := RSConnectUser{
 		Email:          "john@doe.com",

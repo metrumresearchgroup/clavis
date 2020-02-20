@@ -14,6 +14,10 @@ func TestRSConnectUser_TemplateSpec(t *testing.T) {
 	viper.Set("username", "joed")
 	viper.Set("location", "/home/joed")
 	viper.Set("file", ".rsconnectpassword")
+	viper.Set("organization","ThisCo")
+
+	var vc ViperConfig
+	viper.Unmarshal(&vc)
 
 	fig, _ := GetFiglyWithIt("ThisCo")
 
@@ -72,7 +76,7 @@ func TestRSConnectUser_TemplateSpec(t *testing.T) {
 				UpdatedTime:    tt.fields.UpdatedTime,
 				UserRole:       tt.fields.UserRole,
 			}
-			got, err := u.TemplateSpec()
+			got, err := u.TemplateSpec(vc)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RSConnectUser.TemplateSpec() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -193,13 +197,16 @@ func TestTemplateSpec_Write(t *testing.T) {
 			viper.Set("location", locations[key])
 			viper.Set("filename", filenames[key])
 
+			var vc ViperConfig
+			viper.Unmarshal(&vc)
+
 			r := TemplateSpec{
 				OrganizationFiglet: tt.fields.OrganizationFiglet,
 				Organization:       tt.fields.Organization,
 				Username:           tt.fields.Username,
 				PasswordFile:       tt.fields.PasswordFile,
 			}
-			if err := r.Write(); (err != nil) != tt.wantErr {
+			if err := r.Write(vc); (err != nil) != tt.wantErr {
 				t.Errorf("TemplateSpec.Write() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

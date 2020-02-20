@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/user"
+	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 )
@@ -15,7 +16,7 @@ const configFile string = ".clavis.yml"
 type Configuration struct {
 	Completed              bool   `yaml:"completed"`
 	PasswordFile           string `yaml:"password_file"`
-	ShellConfigurationFile string `yaml:"shellconfig"`
+	ShellConfigurationFile string `yaml:"shell_config"`
 	Location               string `yaml:"location"`
 }
 
@@ -38,7 +39,7 @@ func (c Configuration) Store() error {
 		return err
 	}
 
-	file, err := os.Create(user.HomeDir + "/" + configFile)
+	file, err := os.Create(filepath.Join(user.HomeDir , configFile))
 
 	if err != nil {
 		return err
@@ -63,7 +64,7 @@ func readConfig() (Configuration, error) {
 		return Configuration{}, err
 	}
 
-	content, err := ioutil.ReadFile(user.HomeDir + "/" + configFile)
+	content, err := ioutil.ReadFile(filepath.Join(user.HomeDir ,configFile))
 
 	if err != nil {
 		return Configuration{}, err
