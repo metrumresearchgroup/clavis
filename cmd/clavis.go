@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/spf13/afero"
 	"io/ioutil"
 	"net/http"
 	"os/user"
@@ -105,6 +106,15 @@ var Clavis = &cobra.Command{
 		if err == nil && existingConfig.Completed {
 			//Looks like there was actually a completed config file here.
 			log.Info("A config already exists for this user. No work to be done")
+			return
+		}
+
+
+		//Lastly, let's check to see if the rsconnectpassword file exists in the user's home directory
+		rspassLocation := filepath.Join(userdetails.HomeDir,ViperConfiguration.File)
+
+		if ok, _ := afero.Exists(afero.NewOsFs(),rspassLocation); ok {
+			log.Errorf("An existing RSConnect password file was located at %s. Exiting", rspassLocation)
 			return
 		}
 
