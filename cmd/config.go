@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strconv"
 
 	"gopkg.in/yaml.v2"
 )
@@ -26,20 +27,33 @@ func (c Configuration) YAML() ([]byte, error) {
 }
 
 //Store is responsible for writing the configuration to the home directory for use later
-func (c Configuration) Store() error {
+func (c Configuration) Store(userdetail *user.User) error {
 	bytes, err := c.YAML()
 
 	if err != nil {
 		return err
 	}
 
-	user, err := user.Current()
+	file, err := os.Create(filepath.Join(userdetail.HomeDir , configFile))
 
 	if err != nil {
 		return err
 	}
 
-	file, err := os.Create(filepath.Join(user.HomeDir , configFile))
+	userid, err := strconv.Atoi(userdetail.Uid)
+
+	if err != nil {
+		return err
+	}
+
+	guid, err := strconv.Atoi(userdetail.Gid)
+
+	if err != nil {
+		return err
+	}
+
+	//Make sure the file is owned by the user we have looked up
+	err = file.Chown(userid,guid)
 
 	if err != nil {
 		return err
@@ -56,15 +70,10 @@ func (c Configuration) Store() error {
 	return nil
 }
 
-func readConfig() (Configuration, error) {
+func readConfig(config ViperConfig) (Configuration, error) {
 	var conf Configuration
-	user, err := user.Current()
 
-	if err != nil {
-		return Configuration{}, err
-	}
-
-	content, err := ioutil.ReadFile(filepath.Join(user.HomeDir ,configFile))
+	content, err := ioutil.ReadFile(filepath.Join(config.UserDetails.HomeDir ,configFile))
 
 	if err != nil {
 		return Configuration{}, err

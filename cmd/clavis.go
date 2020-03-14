@@ -23,6 +23,8 @@ var GeneratedPassword string
 
 var userAPIURL string = "http://localhost:3939/__api__/v1/users"
 
+const rsConnectContainerFile string = ".rsconnectpassword"
+
 //RSConnectUser is the structure defining an RSConnect User
 type RSConnectUser struct {
 	//Components required for transmission
@@ -42,10 +44,6 @@ type RSConnectUser struct {
 	UserRole    string `json:"user_role,omitempty"`
 }
 
-var (
-	ViperConfiguration ViperConfig
-)
-
 type ViperConfig struct {
 	Username string `mapstructure:"username" json:"username" yaml:"username"`
 	File string `mapstructure:"file" json:"file" yaml:"file"`
@@ -56,17 +54,19 @@ type ViperConfig struct {
 	ShellConfig string `mapstructure:"shell_config" json:"shell_config" yaml:"shell_config"`
 	Debug bool `mapstructure:"debug" json:"debug" yaml:"debug"`
 	CreateMOTD bool `mapstructure:"create_motd" json:"create_motd" yaml:"create_motd"`
+	UserDetails *user.User
 }
 
 // Clavis is the root level command
 var Clavis = &cobra.Command{
 	Use:   "clavis",
 	Short: "Preparing and securing RSConnect",
-	Long:  `This application serves to provision an initial RSConnect (Password backed) user. A password is generated and a templated file is inserted into the user's directory with those details for login purposes.`,
+	Long:  `This utility provisions an admin user in RSConnect. 
+A password is generated and effort is made to surface those details to the user for login purposes.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-
+		var ViperConfiguration ViperConfig
 
 		err := viper.Unmarshal(&ViperConfiguration)
 
@@ -80,28 +80,30 @@ var Clavis = &cobra.Command{
 			log.SetLevel(log.DebugLevel)
 		}
 
+
+		log.Debugf("After starting and taking in arguments, location is currently %s", ViperConfiguration.Location)
+
+		err = ViperConfiguration.Prepare()
+
+
+		log.WithFields(log.Fields{
+			"location" : ViperConfiguration.Location,
+			"username" : ViperConfiguration.Username,
+			"username_from_user" : ViperConfiguration.UserDetails.Username,
+		}).Debug("Complex logic for config defaults completed")
+
 		//Check for insufficient values
 		if ViperConfiguration.Name == "" || ViperConfiguration.Organization == "" || ViperConfiguration.Email == "" {
 			log.Fatal("Either Name, Organization, or Email have not been provided! Please provide these flags at" +
 				"runtime in order to use Clavis")
 		}
 
-		log.Debug("Setting username from shell definition")
-
-		userdetails, err := user.Current()
-
-		if err != nil {
-			log.Fatalf("Could not get current user details for some reason: %s", err)
-		}
-
-		ViperConfiguration.Username = userdetails.Username
-
 		log.Debugf("Located username as %s", ViperConfiguration.Username)
 
 
 		//Check for config
 		log.Debug("Looking for an existing configuration")
-		existingConfig, err := readConfig()
+		existingConfig, err := readConfig(ViperConfiguration)
 
 		if err == nil && existingConfig.Completed {
 			//Looks like there was actually a completed config file here.
@@ -110,11 +112,8 @@ var Clavis = &cobra.Command{
 		}
 
 
-		//Lastly, let's check to see if the rsconnectpassword file exists in the user's home directory
-		rspassLocation := filepath.Join(userdetails.HomeDir,ViperConfiguration.File)
-
-		if ok, _ := afero.Exists(afero.NewOsFs(),rspassLocation); ok {
-			log.Errorf("An existing RSConnect password file was located at %s. Exiting", rspassLocation)
+		if ok, _ := afero.Exists(afero.NewOsFs(), filepath.Join(ViperConfiguration.Location,ViperConfiguration.File)); ok{
+			log.Errorf("An RSConnect password file already exists at %s", filepath.Join(ViperConfiguration.Location,ViperConfiguration.File) )
 			return
 		}
 
@@ -136,7 +135,7 @@ var Clavis = &cobra.Command{
 		}
 
 		log.Debug("Writing the details of the clavis config")
-		err = newConfig.Store()
+		err = newConfig.Store(ViperConfiguration.UserDetails)
 
 		if err != nil {
 			cmd.PrintErr(err)
@@ -149,12 +148,6 @@ var Clavis = &cobra.Command{
 
 func init() {
 
-	username, err := user.Current()
-
-	if err != nil {
-		log.Fatalf("Unable to access current user details!. %s",err)
-	}
-
 	//Optionally specify a username besides the shell account name
 	Clavis.PersistentFlags().StringP("username", "u", "", "The username to be utilized for both account creation and detail storage")
 	Clavis.PersistentFlags().StringP("file", "f", ".rsconnectpassword", "The filename to use for writing the contents of the rsconnect password")
@@ -166,9 +159,6 @@ func init() {
 	Clavis.PersistentFlags().StringP("shell_config", "c", ".bashrc", "Defines the location of the shall profile / rc for manipulation")
 	Clavis.PersistentFlags().BoolP("debug","d", false, "Whether or not to print debug information" )
 	Clavis.PersistentFlags().BoolP("create_motd", "s", true, "Whether or not to create the motd file for the user")
-
-	viper.SetDefault("user",username.Name)
-	viper.SetDefault("location", username.HomeDir)
 
 	viper.BindPFlag("username", Clavis.PersistentFlags().Lookup("username"))
 	viper.BindPFlag("file", Clavis.PersistentFlags().Lookup("file"))
@@ -278,12 +268,14 @@ func (u RSConnectUser) Create(config ViperConfig) (RSConnectUser, error) {
 	}
 
 	//Trigger the File creation and update of bashrc
+	log.Debug("Beginning template generation for figlet")
 	ts, err := u.TemplateSpec(config)
 
 	if err != nil {
 		return u, err
 	}
 
+	log.Debug("Writing template file out")
 	err = ts.Write(config)
 
 	if err != nil {
@@ -304,4 +296,28 @@ func GetFiglyWithIt(input string) (string, error) {
 	}
 
 	return ascii.RenderOpts(input, options)
+}
+
+
+func( v *ViperConfig) Prepare() error {
+	var err error
+	//Handle userdetails collection. If config is present lookup user. Otherwise default to current user
+	if v.Username != "" {
+		v.UserDetails, err = user.Lookup(v.Username)
+		if err != nil {
+			return err
+		}
+	} else {
+		v.UserDetails, err = user.Current()
+		if err != nil {
+			return err
+		}
+	}
+
+	//Handle file location details: No provided value should default to user dir
+	if v.Location == "" {
+		log.Debugf("Location is empty. Setting it to %s", v.UserDetails.HomeDir)
+		v.Location = v.UserDetails.HomeDir
+	}
+	return nil
 }
