@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"os"
-	"os/user"
 	"path/filepath"
 	"text/template"
 )
@@ -83,6 +83,7 @@ func (t TemplateSpec) Write(config ViperConfig) error {
 	defer password.Close()
 	password.WriteString(GeneratedPassword + "\n")
 	password.Chmod(0700)
+	password.Chown(config.UID, config.GID)
 
 	//Write the MOTD out
 	content, err := t.Render()
@@ -101,8 +102,9 @@ func (t TemplateSpec) Write(config ViperConfig) error {
 
 		defer motd.Close()
 
-		motd.Chmod(0700)
 		motd.WriteString(content + "\n")
+		motd.Chmod(0700)
+		motd.Chown(config.UID, config.GID)
 
 		//Updating Shell
 		log.Debug("Updating shell / shell config")
@@ -116,12 +118,8 @@ func (t TemplateSpec) Write(config ViperConfig) error {
 }
 
 func updateShellConfiguration(vconfig ViperConfig) error {
-	logos, err := user.Current()
-	if err != nil {
-		return err
-	}
 
-	config := filepath.Join(logos.HomeDir,vconfig.ShellConfig)
+	config := filepath.Join(vconfig.HomeDir,vconfig.ShellConfig)
 
 	f, err := os.OpenFile(config, os.O_APPEND|os.O_WRONLY, 0600)
 
@@ -130,8 +128,8 @@ func updateShellConfiguration(vconfig ViperConfig) error {
 	}
 
 	defer f.Close()
-
-	f.WriteString("cat " + logos.HomeDir + "/.motd")
+	motdCmd := fmt.Sprintf("\ncat %s\n", filepath.Join(vconfig.HomeDir, ".motd"))
+	f.WriteString(motdCmd)
 
 	return nil
 }

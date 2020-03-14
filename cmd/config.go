@@ -26,14 +26,14 @@ func (c Configuration) YAML() ([]byte, error) {
 }
 
 //Store is responsible for writing the configuration to the home directory for use later
-func (c Configuration) Store() error {
+func (c Configuration) Store(u string) error {
 	bytes, err := c.YAML()
 
 	if err != nil {
 		return err
 	}
 
-	user, err := user.Current()
+	user, err := user.Lookup(u)
 
 	if err != nil {
 		return err
@@ -56,9 +56,9 @@ func (c Configuration) Store() error {
 	return nil
 }
 
-func readConfig() (Configuration, error) {
+func readConfig(u string) (Configuration, error) {
 	var conf Configuration
-	user, err := user.Current()
+	user, err := user.Lookup(u)
 
 	if err != nil {
 		return Configuration{}, err
