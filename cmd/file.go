@@ -116,7 +116,7 @@ func (t TemplateSpec) Write(config ViperConfig) error {
 	}
 
 	if config.CreateMOTD {
-		log.Debug("Based on configuration, creating MOTD file in %s", config.UserDetails.HomeDir)
+		log.Debugf("Based on configuration, creating MOTD file in %s", config.UserDetails.HomeDir)
 		motd, err := os.Create(filepath.Join(config.UserDetails.HomeDir,".motd"))
 
 		if err != nil {

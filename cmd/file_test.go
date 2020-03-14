@@ -198,6 +198,7 @@ func TestTemplateSpec_Write(t *testing.T) {
 			viper.Set("filename", filenames[key])
 
 			var vc ViperConfig
+			vc.Prepare()
 			viper.Unmarshal(&vc)
 
 			r := TemplateSpec{

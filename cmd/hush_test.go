@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -18,8 +19,8 @@ func Test_updateShellConfig(t *testing.T) {
 		ShellConfigurationFile: sampleLocation,
 	}
 
-	if !fileExists(curuser.HomeDir + "/" + sampleLocation) {
-		ioutil.WriteFile(curuser.HomeDir+"/"+sampleLocation, []byte(sampleContent), 0644)
+	if !fileExists(sampleLocation) {
+		ioutil.WriteFile(sampleLocation, []byte(sampleContent), 0644)
 	}
 
 	type args struct {
@@ -53,6 +54,9 @@ func TestHush(t *testing.T) {
 	//First create motd file if it doesn't exist
 	content := "meow"
 	user, _ := user.Current()
+
+	viper.Set("username", "dbreeden")
+
 
 	if !fileExists(user.HomeDir + "/.motd") {
 		ioutil.WriteFile(user.HomeDir+"/.motd", []byte(content), 0644)

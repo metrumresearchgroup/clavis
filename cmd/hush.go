@@ -67,7 +67,7 @@ func init() {
 
 func updateShellConfig(user *user.User, config Configuration) error {
 	//Open the config file for writing
-	configfile, err := ioutil.ReadFile(user.HomeDir + "/" + config.ShellConfigurationFile)
+	configfile, err := ioutil.ReadFile(config.ShellConfigurationFile)
 
 	if err != nil {
 		return err
@@ -84,7 +84,7 @@ func updateShellConfig(user *user.User, config Configuration) error {
 
 	//Write the content back to the file
 	updated := strings.Join(lines, "\n")
-	err = ioutil.WriteFile(user.HomeDir+"/"+config.ShellConfigurationFile, []byte(updated), 0644)
+	err = ioutil.WriteFile(config.ShellConfigurationFile, []byte(updated), 0644)
 
 	if err != nil {
 		return err
