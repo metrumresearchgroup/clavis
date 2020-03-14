@@ -262,6 +262,8 @@ func TestRSConnectUser_Create(t *testing.T) {
 	var vc ViperConfig
 	viper.Unmarshal(&vc)
 
+	vc.Prepare()
+
 	var responsecode int = 401
 
 	u := RSConnectUser{

@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -24,7 +26,17 @@ var Hush = &cobra.Command{
 }
 
 func hush(cmd *cobra.Command) error {
-	config, err := readConfig()
+	var ViperConfiguration ViperConfig
+
+	viper.Unmarshal(&ViperConfiguration)
+	err := ViperConfiguration.Prepare()
+
+	if err != nil {
+		log.Fatalf("Failed to parse default values into viper details: %s ",err)
+	}
+
+	config, err := readConfig(ViperConfiguration)
+
 
 	if err != nil {
 		cmd.PrintErr(err)
@@ -32,21 +44,15 @@ func hush(cmd *cobra.Command) error {
 	}
 
 	//Remove the MOTD file
-	user, err := user.Current()
 
-	if err != nil {
-		cmd.PrintErr(err)
-		return err
-	}
-
-	err = os.Remove(user.HomeDir + "/.motd")
+	err = os.Remove(ViperConfiguration.UserDetails.HomeDir + "/.motd")
 
 	if err != nil {
 		cmd.PrintErr(fmt.Errorf("Unable to delete the MOTD File: %s", err.Error()))
 		return err
 	}
 
-	err = updateShellConfig(user, config)
+	err = updateShellConfig(ViperConfiguration.UserDetails, config)
 
 	if err != nil {
 		cmd.PrintErr(fmt.Errorf("We were unable to update the users shell configuration: %s ", err.Error()))
@@ -61,7 +67,7 @@ func init() {
 
 func updateShellConfig(user *user.User, config Configuration) error {
 	//Open the config file for writing
-	configfile, err := ioutil.ReadFile(user.HomeDir + "/" + config.ShellConfigurationFile)
+	configfile, err := ioutil.ReadFile(config.ShellConfigurationFile)
 
 	if err != nil {
 		return err
@@ -78,7 +84,7 @@ func updateShellConfig(user *user.User, config Configuration) error {
 
 	//Write the content back to the file
 	updated := strings.Join(lines, "\n")
-	err = ioutil.WriteFile(user.HomeDir+"/"+config.ShellConfigurationFile, []byte(updated), 0644)
+	err = ioutil.WriteFile(config.ShellConfigurationFile, []byte(updated), 0644)
 
 	if err != nil {
 		return err
