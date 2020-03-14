@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/user"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -24,22 +25,15 @@ var Hush = &cobra.Command{
 }
 
 func hush(cmd *cobra.Command) error {
-	config, err := readConfig()
+	user, _ := user.Current()
+	config, err := readConfig(user.Username)
 
 	if err != nil {
 		cmd.PrintErr(err)
 		return err
 	}
 
-	//Remove the MOTD file
-	user, err := user.Current()
-
-	if err != nil {
-		cmd.PrintErr(err)
-		return err
-	}
-
-	err = os.Remove(user.HomeDir + "/.motd")
+	err = os.Remove(filepath.Join(user.HomeDir, ".motd"))
 
 	if err != nil {
 		cmd.PrintErr(fmt.Errorf("Unable to delete the MOTD File: %s", err.Error()))
