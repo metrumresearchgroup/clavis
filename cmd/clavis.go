@@ -23,7 +23,7 @@ var GeneratedPassword string
 
 var userAPIURL string = "http://localhost:3939/__api__/v1/users"
 
-const rsConnectPasswordFileName string = ".rsconnectpassword"
+const rsConnectContainerFile string = ".rsconnectpassword"
 
 //RSConnectUser is the structure defining an RSConnect User
 type RSConnectUser struct {
@@ -61,7 +61,8 @@ type ViperConfig struct {
 var Clavis = &cobra.Command{
 	Use:   "clavis",
 	Short: "Preparing and securing RSConnect",
-	Long:  `This application serves to provision an initial RSConnect (Password backed) user. A password is generated and a templated file is inserted into the user's directory with those details for login purposes.`,
+	Long:  `This utility provisions an admin user in RSConnect. 
+A password is generated and effort is made to surface those details to the user for login purposes.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
