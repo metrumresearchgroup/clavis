@@ -4,8 +4,8 @@ import (
 	"bytes"
 	log "github.com/sirupsen/logrus"
 	"os"
-	"os/user"
 	"path/filepath"
+	"strconv"
 	"text/template"
 )
 
@@ -72,7 +72,10 @@ func (t TemplateSpec) Render() (string, error) {
 
 //Write will write the rendered content down to the desired File
 func (t TemplateSpec) Write(config ViperConfig) error {
-
+	log.WithFields(log.Fields{
+		"user" : config.UserDetails.Username,
+		"location" : config.Location,
+	}).Debug("Getting ready to write template spec to directory")
 	//Write the Password File out
 
 	password, err := os.Create(filepath.Join(config.Location,config.File))
@@ -84,6 +87,27 @@ func (t TemplateSpec) Write(config ViperConfig) error {
 	password.WriteString(GeneratedPassword + "\n")
 	password.Chmod(0700)
 
+	userid, err := strconv.Atoi(config.UserDetails.Uid)
+
+	if err != nil {
+		return err
+	}
+
+	guid, err := strconv.Atoi(config.UserDetails.Gid)
+
+	if err != nil {
+		return err
+	}
+
+	//Make sure the file is owned by the user we have looked up
+	err = password.Chown(userid,guid)
+
+	if err != nil {
+		return err
+	}
+
+	log.Debug("Password file is taken care of")
+
 	//Write the MOTD out
 	content, err := t.Render()
 
@@ -92,8 +116,8 @@ func (t TemplateSpec) Write(config ViperConfig) error {
 	}
 
 	if config.CreateMOTD {
-		log.Debug("Based on configuration, creating MOTD file")
-		motd, err := os.Create(filepath.Join(config.Location,".motd"))
+		log.Debug("Based on configuration, creating MOTD file in %s", config.UserDetails.HomeDir)
+		motd, err := os.Create(filepath.Join(config.UserDetails.HomeDir,".motd"))
 
 		if err != nil {
 			return err
@@ -103,6 +127,12 @@ func (t TemplateSpec) Write(config ViperConfig) error {
 
 		motd.Chmod(0700)
 		motd.WriteString(content + "\n")
+
+		err = motd.Chown(userid,guid)
+
+		if err != nil {
+			return err
+		}
 
 		//Updating Shell
 		log.Debug("Updating shell / shell config")
@@ -116,12 +146,8 @@ func (t TemplateSpec) Write(config ViperConfig) error {
 }
 
 func updateShellConfiguration(vconfig ViperConfig) error {
-	logos, err := user.Current()
-	if err != nil {
-		return err
-	}
 
-	config := filepath.Join(logos.HomeDir,vconfig.ShellConfig)
+	config := filepath.Join(vconfig.UserDetails.HomeDir,vconfig.ShellConfig)
 
 	f, err := os.OpenFile(config, os.O_APPEND|os.O_WRONLY, 0600)
 
@@ -131,7 +157,7 @@ func updateShellConfiguration(vconfig ViperConfig) error {
 
 	defer f.Close()
 
-	f.WriteString("cat " + logos.HomeDir + "/.motd")
+	f.WriteString("cat " + vconfig.UserDetails.HomeDir + "/.motd")
 
 	return nil
 }
