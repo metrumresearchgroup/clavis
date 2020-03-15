@@ -151,7 +151,7 @@ func TestTemplateSpec_Write(t *testing.T) {
 
 	locations := []string{
 		"/tmp",
-		"/root",
+		"/doesntexist",
 	}
 
 	filenames := []string{
