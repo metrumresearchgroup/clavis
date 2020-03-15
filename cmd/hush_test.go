@@ -55,7 +55,7 @@ func TestHush(t *testing.T) {
 	content := "meow"
 	user, _ := user.Current()
 
-	viper.Set("username", "dbreeden")
+	viper.Set("username", "root")
 
 
 	if !fileExists(user.HomeDir + "/.motd") {
