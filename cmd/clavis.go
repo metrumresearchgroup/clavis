@@ -85,6 +85,9 @@ A password is generated and effort is made to surface those details to the user 
 
 		err = ViperConfiguration.Prepare()
 
+		if err != nil {
+			log.Fatalf("Failure locating requested user %s on the system. Error details are %s", ViperConfiguration.Username, err)
+		}
 
 		log.WithFields(log.Fields{
 			"location" : ViperConfiguration.Location,
