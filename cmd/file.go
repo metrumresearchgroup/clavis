@@ -23,7 +23,7 @@ const outputTemplate string = `
 {{ end }}
 
 Welcome to {{ .Organization }}. RSConnect has been provisioned on this system and your user, {{ .Username }}, has been provisioned as an administrator successfully! 
-Your RSConnect password has been written to {{ .PasswordFile }} , but you should change it as quickly as soon as you login. 
+Your RSConnect password has been written to {{ .PasswordFile }} , but you should change it as soon as you login. 
 
 If you'd like to stop seeing this message, just issue the following command:
 
@@ -42,7 +42,7 @@ func (u RSConnectUser) TemplateSpec(config ViperConfig) (TemplateSpec, error) {
 	tspec := TemplateSpec{
 		Organization: config.Organization,
 		Username:     config.Username,
-		PasswordFile: filepath.Join(config.Location , config.File),
+		PasswordFile: filepath.Join(config.Location, config.File),
 	}
 
 	fig, err := GetFiglyWithIt(tspec.Organization)
@@ -73,12 +73,12 @@ func (t TemplateSpec) Render() (string, error) {
 //Write will write the rendered content down to the desired File
 func (t TemplateSpec) Write(config ViperConfig) error {
 	log.WithFields(log.Fields{
-		"user" : config.UserDetails.Username,
-		"location" : config.Location,
+		"user":     config.UserDetails.Username,
+		"location": config.Location,
 	}).Debug("Getting ready to write template spec to directory")
 	//Write the Password File out
 
-	password, err := os.Create(filepath.Join(config.Location,config.File))
+	password, err := os.Create(filepath.Join(config.Location, config.File))
 
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func (t TemplateSpec) Write(config ViperConfig) error {
 	}
 
 	//Make sure the file is owned by the user we have looked up
-	err = password.Chown(userid,guid)
+	err = password.Chown(userid, guid)
 
 	if err != nil {
 		return err
@@ -117,7 +117,7 @@ func (t TemplateSpec) Write(config ViperConfig) error {
 
 	if config.CreateMOTD {
 		log.Debugf("Based on configuration, creating MOTD file in %s", config.UserDetails.HomeDir)
-		motd, err := os.Create(filepath.Join(config.UserDetails.HomeDir,".motd"))
+		motd, err := os.Create(filepath.Join(config.UserDetails.HomeDir, ".motd"))
 
 		if err != nil {
 			return err
@@ -128,7 +128,7 @@ func (t TemplateSpec) Write(config ViperConfig) error {
 		motd.Chmod(0700)
 		motd.WriteString(content + "\n")
 
-		err = motd.Chown(userid,guid)
+		err = motd.Chown(userid, guid)
 
 		if err != nil {
 			return err
@@ -147,7 +147,7 @@ func (t TemplateSpec) Write(config ViperConfig) error {
 
 func updateShellConfiguration(vconfig ViperConfig) error {
 
-	config := filepath.Join(vconfig.UserDetails.HomeDir,vconfig.ShellConfig)
+	config := filepath.Join(vconfig.UserDetails.HomeDir, vconfig.ShellConfig)
 
 	f, err := os.OpenFile(config, os.O_APPEND|os.O_WRONLY, 0600)
 
