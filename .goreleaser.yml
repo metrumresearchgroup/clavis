@@ -47,5 +47,4 @@ changelog:
       - "^test:"
 
 release:
-  disable: true
-  skip_upload: true
+  disable: false
