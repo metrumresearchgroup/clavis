@@ -49,12 +49,3 @@ changelog:
 release:
   disable: true
   skip_upload: true
-
-blobs:
-  -
-    provider: s3
-    region: us-east-2
-    bucket: mrg-build-artifacts
-    ids:
-      - default
-    directory: "clavis/{{ .Tag }}"
