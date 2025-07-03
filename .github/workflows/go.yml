@@ -1,49 +1,37 @@
-name: Go
+# .gitHub/workflows/release.yml
+name: Release Binaries
+
 on:
+  # Trigger on any new tag like v1.2.3
   push:
-    branches:
-      - master
+    tags:
+      - 'v*'
+  # Manual run if needed
+  workflow_dispatch:
+
+#env:
+#  # Must match the binary name in your Makefile
+#  BINARY_NAME: bs
+
 jobs:
-  build:
-    name: Build
+  build-and-release:
+    name: Build & Publish Release
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Go 1.13
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.13
-      id: go
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v1
-
-    - name: Get dependencies
-      run: |
-        go get -v -t -d ./...
-        if [ -f Gopkg.toml ]; then
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-            dep ensure
-        fi
-    - name: Coverall
-      env:
-        COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
-      run: |
-        mkdir -p /home/runner/go
-        export GOPATH=/home/runner/go
-        mkdir -p $GOPATH/src/github.com/metrumresearchgroup
-        cp -rf /home/runner/work/clavis/clavis $GOPATH/src/github.com/metrumresearchgroup
-        cd $GOPATH/src/github.com/metrumresearchgroup/clavis
-        go install . 
-        go mod tidy
-        go mod download
-        go get github.com/mattn/goveralls
-        go test -v cmd/* -covermode=count -coverprofile=coverage.out
-        cp /home/runner/go/bin/goveralls $GOROOT/bin
-        sed -i 's/\/home\/runner\/go\/src\///g' coverage.out
-        git checkout master
-        $GOROOT/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
-
-    - name: Build
-      run: go build -v .
-
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          distribution: goreleaser
+          # 'latest', 'nightly', or a semver
+          version: '~> v2'
+          args: release --clean
